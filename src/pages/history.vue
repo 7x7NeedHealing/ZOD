@@ -6,7 +6,7 @@
         </div>
         <el-divider />
 
-        <div class="body">
+        <div class="body" >
             <el-scrollbar>
                 <!-- <el-timeline v-infinite-scroll="load" :infinite-scroll-disabled="busy" > 
                     <el-timeline-item  center v-for="(e, index) in historyArray"
@@ -19,8 +19,8 @@
                         </el-card>
                     </el-timeline-item>
                 </el-timeline> -->
-                <el-timeline > 
-                    <el-timeline-item  center v-for="(e, index) in historyArray"
+                <el-timeline>
+                    <el-timeline-item center v-for="(e, index) in historyArray"
                         :timestamp="beijingTime(historyTimeArray[index])" placement="top">
                         <el-card>
                             <a href="javascript:" class="info" @click="go(e, index)">
@@ -44,6 +44,7 @@ import axios from 'axios';
 import { onMounted, reactive, Ref, ref } from 'vue';
 import router from '../router';
 import { useMain } from '../store/home';
+
 const state = useMain()
 interface historyObj {
     blogId: string,
@@ -95,6 +96,7 @@ const load = () => {
 }
 
 onMounted(() => {
+    let flag = ref(false);
     // axios.get('http://localhost:888/checkHistory?account=' + `${state.account}`)
     //     .then(response => {
     //         // console.log(response.data);
@@ -116,14 +118,16 @@ onMounted(() => {
     //     })
     axios.get(state.http + '/checkHistory?account=' + `${state.account}` + '&page=' + historyPage.value)
         .then(response => {
-            console.log(response.data);
+            // console.log(response.data);
             response.data.forEach((element: historyObj) => {
                 // historyArray.push(element)
-                blogInfo.unshift(element.blogId)
-                historyTimeArray.unshift(element.time)
+                // blogInfo.unshift(element.blogId)
+                // 存储记录时间的数组
+                historyTimeArray.push(element.time)
                 axios.get(state.http + '/checkBlogById?blogId=' + `${element.blogId}`)
                     .then(response => {
-                        historyArray.unshift(response.data[0]);
+                        // 存储具体记录内容的数组
+                        historyArray.push(response.data[0]);
                         historyPage.value += 5;
                         busy.value = false;
                     })
@@ -176,10 +180,12 @@ onMounted(() => {
                 text-decoration: none;
                 font-size: 22px;
                 color: black;
-                h4{
+
+                h4 {
                     font-size: 22px;
                     color: black;
                 }
+
                 p {
                     margin-top: 6px;
                     font-size: 14px;

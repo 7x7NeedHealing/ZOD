@@ -35,7 +35,7 @@
 
                <div class="comments">
                   <el-divider />
-                  <ul v-show="userComment.length>0">
+                  <ul v-show="userComment.length > 0">
                      <li class="theComment" v-for="e, index in userComment">
                         <div class="main">
                            <div class="left">
@@ -49,7 +49,32 @@
                                  <div class="releaseTime">
                                     {{ beijingTime(e.releaseTime) }}
                                  </div>
-                                 <a href="javascript:" class="report" @click="report(e)">举报</a>
+                                 <a href="javascript:" class="report" @click="dialogFormVisible = true;form.content = e.content;">举报</a>
+                                 <el-dialog v-model="dialogFormVisible" title="举报此评论">
+                                    <el-form :model="form">
+                                       <el-form-item label="评论" :label-width="formLabelWidth">
+                                          <!-- <el-input v-model="form.reason" autocomplete="off" /> -->
+                                          <span>{{ form.content }}</span>
+                                       </el-form-item>
+                                       <el-form-item label="举报原因" :label-width="formLabelWidth">
+                                          <el-input v-model="form.reason" autocomplete="off" />
+                                       </el-form-item>
+                                       <!-- <el-form-item label="Zones" :label-width="formLabelWidth">
+                                          <el-select v-model="form.region" placeholder="Please select a zone">
+                                             <el-option label="Zone No.1" value="shanghai" />
+                                             <el-option label="Zone No.2" value="beijing" />
+                                          </el-select>
+                                       </el-form-item> -->
+                                    </el-form>
+                                    <template #footer>
+                                       <span class="dialog-footer">
+                                          <el-button @click="dialogFormVisible = false">取消</el-button>
+                                          <el-button type="primary" @click="report(e)">
+                                             确认
+                                          </el-button>
+                                       </span>
+                                    </template>
+                                 </el-dialog>
                               </div>
 
                               <div class="detailContent">
@@ -61,8 +86,8 @@
                         <el-divider />
                      </li>
                   </ul>
-                  <span v-show="userComment.length===0" class="noComments">没有评论哦~</span> 
-                    
+                  <span v-show="userComment.length === 0" class="noComments">没有评论哦~</span>
+
                </div>
             </div>
          </el-scrollbar>
@@ -92,14 +117,14 @@ interface commentInfo {
    content: string,
    fromId: string,
    releaseTime: string,
-   commentId:string
+   commentId: string
 }
 interface commentForm {
    releaseTime: string,
    fromId: string,
    content: string
    toBlog: string,
-   commentId:string
+   commentId: string
 }
 let detailInfo: blogInfo = reactive({
    releaseTime: '',
@@ -121,48 +146,59 @@ const beijingTime = (time: string) => {
    let date = new Date(time);
    return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 }
+// 弹出框内容
+const dialogFormVisible = ref(false);
+const formLabelWidth = '140px';
+const form = reactive({
+   content:'',
+   reason:'',
+   commentId:''
+})
 // 发表评论
-const releaseCommentFunction = ()=>{
+const releaseCommentFunction = () => {
    // console.log('发表评论');
 
    let date = new Date()
-   let data:commentForm ={
-      releaseTime:date.toLocaleString(),
-      content:releaseCommentObj.value,
-      fromId:state.account as string,
-      toBlog:BLOGID,
-      commentId:nanoid()
+   let data: commentForm = {
+      releaseTime: date.toLocaleString(),
+      content: releaseCommentObj.value,
+      fromId: state.account as string,
+      toBlog: BLOGID,
+      commentId: nanoid()
    };
-   axios.post(state.http+'/addComments',data)
-   .then((response)=>{
+   axios.post(state.http + '/addComments', data)
+      .then((response) => {
 
-   })
-   .catch((error)=>{
-      console.log(error);
-      
-   })
+      })
+      .catch((error) => {
+         console.log(error);
+
+      })
    userComment.unshift(data)
    // 重置输入框内容
-   releaseCommentObj=ref('')
-   
+   releaseCommentObj = ref('')
+
 }
 
 // 举报评论
-const report =(e:commentInfo)=>{
+const report = (e: commentInfo) => {
+   form.content = e.content;
+   // dialogFormVisible.value = true;
    // console.log('举报评论',e);
-   axios.post(state.http+'/reportComment',{content:e.content,reason:'1',commentId:e.commentId})
-   .then((response)=>{
-      ElMessage({
-                showClose: true,
-                message: '举报成功',
-                type: 'success',
-            })
-   })
-   .catch((error)=>{
-      console.log(error);
-      
-   })
-   
+   axios.post(state.http + '/reportComment', { content: form.content, reason: form.reason, commentId: e.commentId })
+      .then((response) => {
+         dialogFormVisible = false;
+         ElMessage({
+            showClose: true,
+            message: '举报成功',
+            type: 'success',
+         })
+      })
+      .catch((error) => {
+         console.log(error);
+
+      })
+
 }
 
 
@@ -173,7 +209,7 @@ onMounted(() => {
    BLOGID = blogId as string;
    blogNickname.value = router.currentRoute.value.query.nickname
    // 查询博客内容具体信息
-   axios.get(state.http+'/checkBlogInfo?blogId=' + blogId)
+   axios.get(state.http + '/checkBlogInfo?blogId=' + blogId)
       .then(function (response) {
          // console.log(BLOGID);     
          detailInfo.releaseTime = response.data[0].releaseTime
@@ -187,7 +223,7 @@ onMounted(() => {
          console.log(error);
       });
    // 查询博客评论内容
-   axios.get(state.http+'/checkCommentsContentByBlogId?toBlog=' + blogId)
+   axios.get(state.http + '/checkCommentsContentByBlogId?toBlog=' + blogId)
       .then(function (response) {
          // console.log(response.data);
          // detailInfo = response.data[0]
@@ -204,6 +240,18 @@ onMounted(() => {
 </script>
     
 <style scoped lang="scss">
+.el-select {
+   width: 300px;
+}
+
+.el-input {
+   width: 300px;
+}
+
+.dialog-footer button:first-child {
+   margin-right: 10px;
+}
+
 .detailContainer {
    width: 1350px;
    height: 870px;
@@ -319,13 +367,15 @@ onMounted(() => {
          margin: 0 auto;
          margin-top: 30px;
          font-size: 0;
-         .noComments{
+
+         .noComments {
             display: block;
             width: 200px;
-            margin:40px auto;
+            margin: 40px auto;
             font-size: 26px;
             color: #666;
          }
+
          .theComment {
             // height: 110px;
             box-sizing: border-box;
@@ -345,7 +395,8 @@ onMounted(() => {
                   margin-right: 10px;
                   display: flex;
                   justify-content: center;
-                  img{
+
+                  img {
                      width: 80px;
                      height: 80px;
                      border-radius: 80px;
@@ -359,11 +410,13 @@ onMounted(() => {
                   display: flex;
                   flex-direction: column;
                   justify-content: start;
+
                   .rightTop {
                      display: flex;
                      height: 26px;
                      line-height: 26px;
                      position: relative;
+
                      .nickname {
                         margin-right: 20px;
                         font-size: 20px;
@@ -372,15 +425,17 @@ onMounted(() => {
                      .releaseTime {
                         font-size: 14px;
                      }
-                     .report{
+
+                     .report {
                         display: block;
                         position: absolute;
                         top: 0;
-                        right:0;
-                        font-size:16px;
+                        right: 0;
+                        font-size: 16px;
                         color: #666;
-                        &:hover{
-                           color: rgb(0,161,214);
+
+                        &:hover {
+                           color: rgb(0, 161, 214);
                         }
                      }
                   }
@@ -397,5 +452,4 @@ onMounted(() => {
          }
       }
    }
-}
-</style>
+}</style>
